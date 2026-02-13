@@ -1,0 +1,95 @@
+﻿ABM Egypt  
+
+
+PREPARED FOR
+Python Developer (Automation & Crawling)
+DEADLINE
+Within 72 hours of assessment being sent.
+DELIVERABLES
+* Project Files
+* Readme.MD
+* Any AI/LLM prompts used
+
+
+Please note that this assessment is designed to evaluate candidates across all experience levels. As our hiring decisions are based on skill level rather than years of experience, we encourage you to complete as much of the assessment as you are able to.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Task 1 : Automation - Stealth Assessment
+Given this site URL https://cd.captchaaiplus.com/recaptcha-v3-2.php you are tasked with following.
+* Make a python automation script that does the following
+   * Open and uses the site to get good score(0.7-0.9) (Hint: use stealth scripts and think methodologically) 
+   * Automate a scaled test of size (250) with at least 15% of the scores being 0.9
+   * After each solving, extract both success text and tokens.
+   * Repeat this process with IPv4 and IPv6 proxies, you can use Webshare free trials
+Q1) Explain how you improve the score or lower it, mention the parameters.
+Q2) Research Recaptcha V3 and answer the following:
+1. What are the different types of recaptcha v3, if any.
+   1. State the differences & make a Parameter-Issue-Solution report for each type to solve it.
+2. What are the two ways to inject tokens?
+
+
+
+
+
+
+
+
+
+
+
+
+TASK 2 : Python API Frameworks Assessment.
+Make a local API using Flask or FastAPI, that does the following:
+* On/recaptcha/in endpoint
+   * Takes all needed inputs from the user and returns a TaskID.
+   * Initiates solving mechanism (Task 1).
+* On /recaptcha/res endpoint
+   * Takes TaskID from the user and returns the token.
+* Make a full cycle script to simulate a customer using your api to scrape the site
+   * You are free to use request automation or browser automation for this specific point.
+TASK 3 : DOM Scraping Assessment.
+Make a python automation script that does the following:
+* Opens this URL: Click Here
+* There are many images in that site(100+), you are required to do the following.
+   * Scrap all images as base64 encoded & save them to file “allimages.json”
+   * Scrap only the 9 Images as base64 encoded visible to you as a human and save them to file “visible_images_only.json”
+* There are many text instructions on that site(100+), you are required to scrap the visible one to you as a human
+
+
+Task 4: System Diagram
+Create a comprehensive architecture diagram including:
+* Message queue system (RabbitMQ) for task distribution
+* Worker node architecture with horizontal scaling
+* SQL Database
+* Monitoring stack integration points with multiple microservices such as but not limited to
+   * System Health 
+   * System Current Load
+   * System Error Logging
+* Failover and recovery mechanisms
+
+
+Delivery Instructions
+* Upload all scripts to a public github repository with a readme.md file describing the entire project and your approach.
+* For the Task 1’s questions, answer them in a “Task1QA_YOURNAME.pdf”
+* For System Design/Task 4, Include them in a directory inside your repo with a brief explanation of your design.
+* Send the Repo link and files as an Email to HR@abmegypt.com

@@ -167,3 +167,15 @@ playwright/.cache/
 Thumbs.db
 
 .agent
+# Python
+__pycache__/
+*.py[cod]
+*.class
+.venv/
+venv/
+ENV/
+
+# Chrome Profiles & Local Data
+.chrome_profile/
+.chrome_profile_diag/
+outputs/

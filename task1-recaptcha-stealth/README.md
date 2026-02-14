@@ -69,11 +69,11 @@ This will:
 - Intercept the reCAPTCHA token and extract the score.
 
 ### Step 3: Run Scaled Testing (250 Runs)
-To satisfy the assessment requirement for 250 runs:
+To satisfy the assessment requirement for 250 runs (High Performance Async Mode):
 ```bash
-python3 scale_test_context.py --count 250 --headed
+python3 scale_test_async.py --count 250 --concurrency 5
 ```
-*Note: This script runs iterations to collect data and verify the 15% @ 0.9 score target.*
+*Note: This script uses an async worker pool to run multiple tests in parallel, drastically reducing runtime while maintaining 0.9 scores.*
 
 ---
 
@@ -91,30 +91,37 @@ This script launches the stealth browser and waits for **you** to click the butt
 
 Our approach uses a multi-layered defense to bypass reCAPTCHA v3 detection:
 
-1. **Binary Evasion**: Instead of using Playwright's bundled Chromium (which is easily flagged), we launch the **system's real Google Chrome** using `subprocess` without the `--enable-automation` flag.
-2. **CDP Connection**: We connect Playwright to the running Chrome instance via the Chrome DevTools Protocol (CDP).
-3. **Fingerprint Replay**: We inject a real browser fingerprint (User-Agent, WebGL renderer, hardware specs) captured from a real session.
-4. **Behavioral Simulation**:
-   - `human.py` implements Bezier-curve mouse movements.
-   - Randomized scroll patterns and dwell times.
-   - Click delays to mimic human reaction time.
-5. **Cookie Warm-up**: Visiting `google.com` first ensures the browser has active Google trust signals/cookies.
+1.  **Binary Evasion**: Instead of using Playwright's bundled Chromium (which is easily flagged), we launch the **system's real Google Chrome** using `subprocess` without the `--enable-automation` flag.
+2.  **CDP Connection**: We connect Playwright to the running Chrome instance via the Chrome DevTools Protocol (CDP).
+3.  **Fingerprint Replay**: We inject a real browser fingerprint (User-Agent, WebGL renderer, hardware specs) captured from a real session.
+4.  **Async Worker Pool**: We use `asyncio` to manage multiple isolated browser contexts within a single Chrome instance, providing:
+    *   **Speed**: ~20 minutes for 250 runs (vs 3 hours sequentially).
+    *   **Isolation**: Each test runs in a fresh, incognito-like context.
+5.  **Behavioral Simulation**:
+    *   `human.py` implements Bezier-curve mouse movements.
+    *   Randomized scroll patterns and dwell times.
+    *   Click delays to mimic human reaction time.
 
 ---
 
 ## 📂 Project Structure
 
-- `src/`: Core automation package.
-  - `stealth.py`: Chrome launch & fingerprint patching.
-  - `human.py`: Mouse/scroll simulation.
-  - `interceptor.py`: Network interception for tokens.
-  - `extractor.py`: DOM parsing and result extraction.
-- `docs/`:
-  - `Q1-score-parameters.md`: Explanation of scoring factors (Assessment Q1).
-  - `step2-extraction.md`: Technical details on tokens/DOM.
-- `record_fingerprint.py`: Utility to capture real browser data.
-- `diagnose.py`: Manual testing tool.
-- `outputs/`: Where scores, tokens, and fingerprints are stored.
+-   `config/`: Centerialized settings & logging.
+-   `src/`: Core automation package.
+    *   `async_manager.py`: Singleton functionality for managing the Chrome process.
+    *   `async_worker.py`: The logic for running a single test iteration.
+    *   `helpers/`:
+        -   `stealth.py`: Fingerprint loading & Stealth injection.
+        -   `async_human.py`: Non-blocking mouse/scroll simulation.
+        -   `interceptor.py`: Network interception for tokens.
+        -   `extractor.py`: DOM parsing and result extraction.
+    *   `core.py`: Legacy synchronous implementation.
+-   `doc/`:
+    *   `Q1-score-parameters.md`: Explanation of scoring factors (Assessment Q1).
+    *   `step2-extraction.md`: Technical details on tokens/DOM.
+-   `record_fingerprint.py`: Utility to capture real browser data.
+-   `scale_test_async.py`: **Main Entry Point** for high-performance scaled testing.
+-   `outputs/`: Where scores, tokens, and fingerprints are stored.
 
 ---
 

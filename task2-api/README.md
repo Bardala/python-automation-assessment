@@ -1,107 +1,40 @@
-# Task 2: Python API Framework Assessment
+# Stealth Scraping API (Task 2)
 
-This project implements a **FastAPI** microservice that wraps the reCAPTCHA v3 automation (from Task 1) into a robust, queue-based architecture. It mimics a distributed system design (Task 4) using local in-memory components.
+A production-ready microservice framework for reCAPTCHA v3 solving, built with FastAPI and Playwright. This project demonstrates a scalable, queue-based architecture for handling heavy browser automation tasks.
 
-## 🚀 Features
+## 🚀 Key Features
 
-*   **Async API**: Built with FastAPI for high-performance asynchronous request handling.
-*   **Job Queue Architecture**: Decouples request ingestion from heavy browser processing.
-*   **Background Worker**: A dedicated worker loop that consumes tasks and manages the Playwright browser lifecycle.
-*   **Polling Simulation**: Includes a full-cycle client script (`simulation.py`) that mimics a real customer interaction.
-*   **System Design Ready**: Structured to easily scale by replacing in-memory queues with RabbitMQ/Redis.
+- **Asynchronous Processing**: Immediate task submission with delayed execution.
+- **Stealth Architecture**: Integrated with advanced browser fingerprints and stealth plugins from Task 1.
+- **Worker-Queue Pattern**: Decoupled request handling from resource-intensive browser operations.
+- **Isolated Contexts**: Every request runs in a fresh browser context to prevent data leakage.
 
-## 📂 Project Structure
+## 📂 Documentation
 
-```text
-task2-api/
-├── src/
-│   ├── api/
-│   │   ├── routes.py       # Endpoint logic (/recaptcha/in, /recaptcha/res)
-│   │   └── models.py       # Pydantic data schemas
-│   ├── core/
-│   │   ├── state.py        # In-memory JobStore & Queue (Mocking DB & RabbitMQ)
-│   │   └── worker.py       # Background consumer bridging to Task 1
-│   └── main.py             # App entry point
-├── simulation.py           # Client script for end-to-end testing
-└── README.md               # This file
-```
+For detailed technical information, please refer to the following guides:
 
-## 🛠️ Setup & Installation
+- **[Architecture Overview](./docs/ARCHITECTURE.md)**: System design, data flow, and component breakdown.
+- **[API Reference](./docs/API_REFERENCE.md)**: Detailed endpoint documentation and data models.
+- **[Worker Logic](./docs/WORKER_LOGIC.md)**: Deep dive into concurrency, browser management, and integration.
+- **[Setup & Usage](./docs/SETUP_USAGE.md)**: Step-by-step instructions to get the service running.
 
-**Prerequisites:**
-*   Python 3.10+
-*   The `task1-recaptcha-stealth` directory must be a sibling to `task2-api`.
-
-1.  **Create Virtual Environment**:
-    ```bash
-    python3 -m venv .venv
-    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-    ```
-
-2.  **Install Dependencies**:
-    ```bash
-    pip install fastapi uvicorn requests playwright playwright-stealth
-    playwright install chromium
-    ```
-
-## 🏃‍♂️ Usage
-
-### 1. Start the API Server
-Run the helper script from the `task2-api` directory:
+## ⚡ Quick Start
 
 ```bash
+# 1. Install dependencies
+pip install -r requirements.txt
+playwright install chromium
+
+# 2. Start the server
 ./start_server.sh
-```
 
-Or manually:
-```bash
-# We set PYTHONPATH to include 'src' and the parent directory so Task 1 modules resolve correctly
-PYTHONPATH=src:../task1-recaptcha-stealth .venv/bin/uvicorn main:app --port 8000 --reload
-```
-
-You should see logs indicating the Worker has started:
-```text
-INFO:     Uvicorn running on http://127.0.0.1:8000
-👷 Worker: Started background loop...
-👷 Worker: Browser Interface Ready.
-```
-
-### 2. Run the Customer Simulation
-Open a new terminal and run the client script:
-
-```bash
-source .venv/bin/activate
+# 3. In another terminal, run simulation
 python simulation.py
 ```
 
-**Expected Output:**
-```text
-🚀 [Customer] Starting simulation request...
-📥 [Customer] Task Submitted. ID: 539c8f27...
-⏳ [Customer] Status: PROCESSING (Elapsed: 2.0s)
-...
-✅ [Customer] SUCCESS!
-   Score: 0.9
-   Token: 03AFcWeA...
-```
+## 🏗️ System Evolution
 
-## 🧩 API Reference
-
-### Submit Task
-*   **Endpoint:** `POST /recaptcha/in`
-*   **Body:** `{"url": "https://target-site.com"}`
-*   **Response:** `{"task_id": "uuid", "status": "QUEUED"}`
-
-### Get Result
-*   **Endpoint:** `GET /recaptcha/res/{task_id}`
-*   **Response:**
-    *   `{"status": "PROCESSING", ...}`
-    *   `{"status": "COMPLETED", "result": {"score": 0.9, "token": "..."}, ...}`
-
-## 🏗️ Architecture Notes (Task 4 Context)
-This implementation serves as the **MVP** for the System Design in Task 4.
-*   **Current State**: Uses `asyncio.Queue` and In-Memory Dict.
-*   **Production Path**:
-    *   Replace `asyncio.Queue` with `aio_pika` (RabbitMQ).
-    *   Replace `JobStore` with `SQLAlchemy` (PostgreSQL).
-    *   Deploy API and Workers as separate Docker containers.
+This service is designed for horizontal scalability. Transitioning to a production-grade distributed system involves:
+1. Replacing the in-memory queue with **RabbitMQ** (using `aio-pika`).
+2. Swapping the `JobStore` for **Redis** or **PostgreSQL**.
+3. Containerizing API nodes and Worker nodes separately.

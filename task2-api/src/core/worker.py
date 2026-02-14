@@ -42,8 +42,9 @@ async def worker_loop():
     # Initialize Browser Manager (Singleton)
     browser_manager = AsyncBrowserManager()
     try:
+        # TODO: Make it True
         # Ensure browser is running
-        await browser_manager.start(headless=False)
+        await browser_manager.start(headless=True)
         print("👷 Worker: Browser Interface Ready.")
     except Exception as e:
         print(f"👷 Worker FATAL: Failed to start browser: {e}")

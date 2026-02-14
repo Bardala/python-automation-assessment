@@ -32,7 +32,90 @@ class AsyncBrowserManager:
         self.fingerprint = _load_fingerprint()
         self.initialized = True
 
-    async def start(self, headless: bool = True):
+    def _create_proxy_auth_extension(self, proxy_url: str) -> str:
+        """Create a temporary Chrome extension to handle proxy authentication."""
+        import shutil
+        from urllib.parse import urlparse
+
+        try:
+            parsed = urlparse(proxy_url)
+            username = parsed.username
+            password = parsed.password
+            host = parsed.hostname
+            port = parsed.port
+            
+            if not username or not password:
+                return None
+                
+            ext_dir = os.path.join(PROFILE_DIR, "proxy_auth_ext")
+            if os.path.exists(ext_dir):
+                shutil.rmtree(ext_dir)
+            
+            os.makedirs(ext_dir, exist_ok=True)
+            
+            manifest_json = """
+            {
+                "version": "1.0.0",
+                "manifest_version": 2,
+                "name": "Chrome Proxy",
+                "permissions": [
+                    "proxy",
+                    "tabs",
+                    "unlimitedStorage",
+                    "storage",
+                    "<all_urls>",
+                    "webRequest",
+                    "webRequestBlocking"
+                ],
+                "background": {
+                    "scripts": ["background.js"]
+                },
+                "minimum_chrome_version":"22.0.0"
+            }
+            """
+            
+            background_js = f"""
+            var config = {{
+                mode: "fixed_servers",
+                rules: {{
+                    singleProxy: {{
+                        scheme: "http",
+                        host: "{host}",
+                        port: parseInt({port})
+                    }},
+                    bypassList: ["localhost"]
+                }}
+            }};
+
+            chrome.proxy.settings.set({{value: config, scope: "regular"}}, function() {{}});
+
+            function callbackFn(details) {{
+                return {{
+                    authCredentials: {{
+                        username: "{username}",
+                        password: "{password}"
+                    }}
+                }};
+            }}
+
+            chrome.webRequest.onAuthRequired.addListener(
+                callbackFn,
+                {{urls: ["<all_urls>"]}},
+                ['blocking']
+            );
+            """
+
+            with open(os.path.join(ext_dir, "manifest.json"), "w") as f:
+                f.write(manifest_json)
+            with open(os.path.join(ext_dir, "background.js"), "w") as f:
+                f.write(background_js)
+                
+            return ext_dir
+        except Exception as e:
+            print(f"Error creating proxy extension: {e}")
+            return None
+
+    async def start(self, headless: bool = True, proxy_url: str = None):
         """Clean launch real Chrome and connect AsyncPlaywright."""
         if self.browser:
             return self.browser
@@ -53,7 +136,16 @@ class AsyncBrowserManager:
             "--disable-infobars",
             "about:blank",
         ]
-        
+
+        if proxy_url:
+            ext_path = self._create_proxy_auth_extension(proxy_url)
+            if ext_path:
+                print(f"🔒 Using Proxy Extension: {proxy_url.split('@')[1]}")
+                args.append(f"--load-extension={ext_path}")
+            else:
+                # Simple fallback
+                args.append(f"--proxy-server={proxy_url}")
+                
         if headless:
             args.insert(1, "--headless=new")
 

@@ -68,7 +68,7 @@
   "webdriver": false,
   "connection": {
     "effectiveType": "4g",
-    "downlink": 2.75,
+    "downlink": 10,
     "rtt": 150
   },
   "permissions": {

@@ -65,12 +65,31 @@ async def main(headed=False):
     print("Launching browser for visible elements (Z-Index filtering)...")
     async with async_playwright() as p:
         # Launch browser with headed option
-        browser = await p.chromium.launch(headless=not headed)
-        page = await browser.new_page()
-        await page.goto(URL)
+        # In headless mode, we add some args to be less detectable/more stable
+        browser = await p.chromium.launch(
+            headless=not headed,
+            args=["--disable-blink-features=AutomationControlled", "--no-sandbox", "--disable-setuid-sandbox"]
+        )
+        
+        # Create a context with a real user agent
+        context = await browser.new_context(
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        )
+        
+        page = await context.new_page()
+        
+        # Increase timeout to 60s
+        page.set_default_timeout(60000)
         
         try:
-            await page.wait_for_selector(".captcha-img", timeout=10000)
+            await page.goto(URL, wait_until="domcontentloaded")
+        except Exception as e:
+            print(f"Navigation error or timeout: {e}")
+            await browser.close()
+            return
+
+        try:
+            await page.wait_for_selector(".captcha-img", timeout=15000)
         except:
             print("Timeout waiting for content")
             

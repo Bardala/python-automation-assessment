@@ -21,8 +21,8 @@ def random_mouse_movements(page: Page, count: int = 5) -> None:
         x = random.randint(100, viewport["width"] - 100)
         y = random.randint(100, viewport["height"] - 100)
         # Move with slight random steps to appear natural
-        page.mouse.move(x, y, steps=random.randint(5, 15))
-        time.sleep(random.uniform(0.1, 0.4))
+        page.mouse.move(x, y, steps=random.randint(3, 8))
+        time.sleep(random.uniform(0.05, 0.2))
 
 
 def random_scroll(page: Page) -> None:
@@ -62,10 +62,10 @@ def human_click(page: Page, selector: str) -> None:
         target_y = box["y"] + box["height"] * random.uniform(0.3, 0.7)
 
         # Move mouse to element with steps (simulates natural cursor path)
-        page.mouse.move(target_x, target_y, steps=random.randint(10, 25))
+        page.mouse.move(target_x, target_y, steps=random.randint(5, 12))
 
         # Brief hover pause before clicking
-        time.sleep(random.uniform(0.2, 0.6))
+        time.sleep(random.uniform(0.1, 0.3))
 
         # Click
         page.mouse.click(target_x, target_y)

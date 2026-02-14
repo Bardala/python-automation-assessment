@@ -1,90 +1,74 @@
-"""Main automation runner — orchestrates stealth browser, human behavior, and extraction."""
+"""
+Main Entry Point for reCAPTCHA v3 Stealth Automation.
 
+Execute a single test run using the centralized logic in src/core.py.
+"""
+
+import argparse
 import json
 import os
+import sys
 
-from .stealth import create_stealth_persistent
-from .interceptor import TokenInterceptor
-from .extractor import parse_recaptcha_response
-from .human import random_mouse_movements, random_scroll, human_click
+# Ensure src is importable
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
-TARGET_URL = "https://cd.captchaaiplus.com/recaptcha-v3-2.php"
+from src.core import solve_recaptcha
+from src.stealth import create_stealth_persistent
+
+# Configuration
 OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "outputs")
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
+def run(headless: bool = False, proxy: str | None = None):
+    """
+    Run a single reCAPTCHA test cycle.
+    """
+    print(f"🚀 Starting Single Run (Focus: {headless and 'Headless' or 'Headed'})")
 
-def run():
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-
-    browser, page, pw, chrome_proc = create_stealth_persistent(headless=False)
+    # 1. Initialize Browser
+    browser, page, pw, chrome_proc = create_stealth_persistent(
+        headless=headless, 
+        proxy=proxy
+    )
 
     try:
-        # Set up token interception before target navigation
-        interceptor = TokenInterceptor()
-        interceptor.attach(page, TARGET_URL)
+        # 2. Execute Core Logic (The Single Source of Truth)
+        result = solve_recaptcha(page)
 
-        # Warm up Google cookies
-        print("Warming up Google cookies...")
-        page.goto("https://www.google.com", wait_until="networkidle")
-        page.wait_for_timeout(2000)
-        random_mouse_movements(page, count=3)
-
-        print("Navigating to target URL...")
-        page.goto(TARGET_URL, wait_until="networkidle")
-        print("Page loaded successfully.")
-
-        # Simulate human behavior — spend time on page
-        print("Simulating human behavior...")
-        random_mouse_movements(page, count=10)
-        random_scroll(page)
-        random_mouse_movements(page, count=5)
-
-        # Dwell on page — reCAPTCHA v3 monitors time-on-page
-        page.wait_for_timeout(3000)
-
-        # Click the button with human-like timing
-        print("Clicking button...")
-        human_click(page, "#btn")
-
-        # Wait for JSON to appear in #out
-        page.wait_for_function(
-            """() => {
-                const el = document.getElementById('out');
-                if (!el || !el.textContent) return false;
-                try { JSON.parse(el.textContent); return true; }
-                catch { return false; }
-            }""",
-            timeout=15000,
-        )
-
-        # Extract results from the DOM
-        print("Extracting results...")
-        raw_json = page.inner_text("#out")
-        result = parse_recaptcha_response(raw_json)
-        result["token"] = interceptor.token
-
-        # Print results
-        print(f"✅ Score: {result['score']}")
+        # 3. Output Results
+        print("\n" + "="*40)
+        print(f"✅ Final Score: {result['score']}")
         print(f"✅ Success: {result['success']}")
-        if result["token"]:
-            print(f"✅ Token (first 50 chars): {result['token'][:50]}...")
+        if result['token']:
+            print(f"✅ Token: {result['token'][:40]}...")
         else:
-            print("⚠️  Token not intercepted")
+            print("⚠️  No token captured")
+        print("="*40)
 
-        # Persist to file
-        output_path = os.path.join(OUTPUT_DIR, "result.json")
+        # 4. Save to File
+        timestamp = result.get("timestamp", "").replace(":", "-").replace(".", "-")
+        filename = f"result_single_{timestamp}.json"
+        output_path = os.path.join(OUTPUT_DIR, filename)
+        
         with open(output_path, "w") as f:
             json.dump(result, f, indent=2)
-        print(f"Results saved to {output_path}")
-
-        page.wait_for_timeout(1000)
+        print(f"📄 Result saved to: {output_path}")
 
     finally:
+        # 5. Cleanup
         browser.close()
         chrome_proc.terminate()
         chrome_proc.wait()
         pw.stop()
-        print("Browser closed.")
+        print("🏁 Browser Session Closed")
 
+def main():
+    parser = argparse.ArgumentParser(description="reCAPTCHA v3 Single Run")
+    parser.add_argument("--headless", action="store_true", help="Run without UI")
+    parser.add_argument("--proxy", type=str, help="Proxy URL")
+    args = parser.parse_args()
+
+    run(headless=args.headless, proxy=args.proxy)
 
 if __name__ == "__main__":
-    run()
+    main()

@@ -14,11 +14,19 @@ PROFILE_DIR = os.path.join(_BASE_DIR, ".chrome_profile")
 FINGERPRINT_PATH = os.path.join(_BASE_DIR, "outputs", "fingerprint.json")
 
 
+from functools import lru_cache
+
+@lru_cache(maxsize=1)
 def _load_fingerprint() -> dict | None:
-    """Load the recorded fingerprint from outputs/fingerprint.json."""
+    """Load the recorded fingerprint from outputs/fingerprint.json (Cached)."""
     if os.path.exists(FINGERPRINT_PATH):
-        with open(FINGERPRINT_PATH) as f:
-            return json.load(f)
+        try:
+            with open(FINGERPRINT_PATH) as f:
+                fp = json.load(f)
+                # print("📋 Fingerprint loaded (disk)") # Debug
+                return fp
+        except Exception:
+            pass
     return None
 
 
@@ -171,12 +179,13 @@ def _wait_for_port(port: int, timeout: float = 10.0) -> bool:
     return False
 
 
-def create_stealth_persistent(headless: bool = False, debug_port: int = 9222):
+def create_stealth_persistent(headless: bool = False, debug_port: int = 9222, proxy: str | None = None):
     """Launch real Chrome cleanly and connect via CDP with fingerprint replay.
 
     Args:
         headless: Run in headless mode if True.
         debug_port: Port for Chrome remote debugging.
+        proxy: Proxy server URL (e.g., "http://user:pass@host:port").
 
     Returns:
         Tuple of (Browser, Page, Playwright instance, Chrome subprocess).
@@ -205,6 +214,9 @@ def create_stealth_persistent(headless: bool = False, debug_port: int = 9222):
         "about:blank",
     ]
 
+    if proxy:
+        chrome_args.append(f"--proxy-server={proxy}")
+
     if headless:
         chrome_args.insert(1, "--headless=new")
 
@@ -226,18 +238,29 @@ def create_stealth_persistent(headless: bool = False, debug_port: int = 9222):
     pw = sync_playwright().start()
     browser = pw.chromium.connect_over_cdp(f"http://127.0.0.1:{debug_port}")
 
-    context = browser.contexts[0]
+    # For context-based testing, we might want to manage contexts manually.
+    # However, to keep backward compatibility with main.py, we'll try to get the default context.
+    try:
+        context = browser.contexts[0]
+        
+        # Apply playwright-stealth with fingerprint overrides
+        stealth = _build_stealth(fp)
+        # We apply it to the default context, but subsequent contexts need it re-applied manually
+        try:
+            stealth.apply_stealth_sync(context)
+        except Exception as e:
+            pass # Ignore if already applied
 
-    # Apply playwright-stealth with fingerprint overrides
-    stealth = _build_stealth(fp)
-    stealth.apply_stealth_sync(context)
+        # Inject additional fingerprint overrides not covered by stealth
+        extra_script = _extra_fingerprint_script(fp)
+        if extra_script:
+            context.add_init_script(extra_script)
 
-    # Inject additional fingerprint overrides not covered by stealth
-    extra_script = _extra_fingerprint_script(fp)
-    if extra_script:
-        context.add_init_script(extra_script)
-
-    page = context.pages[0] if context.pages else context.new_page()
+        page = context.pages[0] if context.pages else context.new_page()
+    except IndexError:
+        # If no context exists (rare with CDP but possible), create one
+        context = browser.new_context()
+        page = context.new_page()
 
     return browser, page, pw, chrome_process
 

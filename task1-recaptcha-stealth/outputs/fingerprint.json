@@ -1,0 +1,80 @@
+{
+  "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+  "platform": "Linux x86_64",
+  "language": "en-US",
+  "languages": [
+    "en-US",
+    "en"
+  ],
+  "hardwareConcurrency": 8,
+  "maxTouchPoints": 0,
+  "vendor": "Google Inc.",
+  "appVersion": "5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+  "doNotTrack": null,
+  "cookieEnabled": true,
+  "deviceMemory": 8,
+  "pdfViewerEnabled": true,
+  "screen": {
+    "width": 1756,
+    "height": 988,
+    "availWidth": 1756,
+    "availHeight": 956,
+    "colorDepth": 24,
+    "pixelDepth": 24
+  },
+  "devicePixelRatio": 1.09375,
+  "timezoneOffset": -120,
+  "timezone": "Africa/Cairo",
+  "webgl": {
+    "vendor": "Google Inc. (Intel)",
+    "renderer": "ANGLE (Intel, Mesa Intel(R) UHD Graphics 630 (CFL GT2), OpenGL 4.6)",
+    "version": "WebGL 1.0 (OpenGL ES 2.0 Chromium)",
+    "shadingLanguageVersion": "WebGL GLSL ES 1.0 (OpenGL ES GLSL ES 1.0 Chromium)"
+  },
+  "plugins": [
+    {
+      "name": "PDF Viewer",
+      "description": "Portable Document Format",
+      "filename": "internal-pdf-viewer"
+    },
+    {
+      "name": "Chrome PDF Viewer",
+      "description": "Portable Document Format",
+      "filename": "internal-pdf-viewer"
+    },
+    {
+      "name": "Chromium PDF Viewer",
+      "description": "Portable Document Format",
+      "filename": "internal-pdf-viewer"
+    },
+    {
+      "name": "Microsoft Edge PDF Viewer",
+      "description": "Portable Document Format",
+      "filename": "internal-pdf-viewer"
+    },
+    {
+      "name": "WebKit built-in PDF",
+      "description": "Portable Document Format",
+      "filename": "internal-pdf-viewer"
+    }
+  ],
+  "mediaDevices": {
+    "audioinput": 1,
+    "videoinput": 1,
+    "audiooutput": 1
+  },
+  "hasChrome": true,
+  "hasChromeRuntime": false,
+  "webdriver": false,
+  "connection": {
+    "effectiveType": "4g",
+    "downlink": 2.75,
+    "rtt": 150
+  },
+  "permissions": {
+    "geolocation": "prompt",
+    "notifications": "prompt",
+    "camera": "prompt",
+    "microphone": "prompt"
+  }
+}

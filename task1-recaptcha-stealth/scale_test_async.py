@@ -47,6 +47,22 @@ class AsyncScaler:
             print(f"⚠️ Error loading proxies: {e}")
             return [None]
 
+    async def _validate_proxy(self, proxy):
+        """Checks if a proxy is alive using curl (matching user's manual test)."""
+        if not proxy: return True
+        try:
+            print(f"🔎 Validating {proxy.split('@')[1]}...")
+            proc = await asyncio.create_subprocess_exec(
+                "curl", "--max-time", "5", "-I", "-x", proxy, "https://www.google.com",
+                stdout=asyncio.subprocess.DEVNULL, 
+                stderr=asyncio.subprocess.DEVNULL
+            )
+            await proc.wait()
+            return proc.returncode == 0
+        except Exception as e:
+            print(f"⚠️ Validation Error: {e}")
+            return False
+
     async def run(self):
         proxies = self._load_proxies()
         total_proxies = len(proxies)
@@ -80,6 +96,12 @@ class AsyncScaler:
             proxy_display = proxy.split('@')[1] if proxy and '@' in proxy else (proxy or "Direct")
             print(f"\n🌐 [Proxy {p_idx+1}/{total_proxies}] {proxy_display} | Batch: {current_batch_size} runs")
             
+            # Validate before launch
+            is_valid = await self._validate_proxy(proxy)
+            if not is_valid:
+                print(f"❌ Proxy {proxy_display} failed validation (curl). Skipping.")
+                continue
+
             # Restart browser for each proxy to clear state and apply new proxy settings
             try:
                 await self.browser_manager.stop()

@@ -82,7 +82,6 @@ Using `channel='chrome'` or launching real Chrome via subprocess is essential.
 
 ## Summary
 
-The single most important factor for reCAPTCHA v3 scoring is the **browser binary fingerprint**.
-No amount of JavaScript patching can overcome detection of Playwright's bundled Chromium.
-Using real Chrome with a recorded fingerprint and clean launch (no automation flags) is the
-foundation. Behavior simulation and cookie warm-up further improve the score.
+While the **browser binary fingerprint** corresponds to a foundational signal (often exposing Playwright's bundled Chromium regardless of JS patching), it is important to recognize that reCAPTCHA v3 employs **ensemble Machine Learning models**. Different factors (behavior, network, fingerprint) carry varying weights depending on the specific site implementation.
+
+Furthermore, reCAPTCHA v3 scores are **site-specific and adaptive**. The model learns from the traffic patterns unique to that specific website over time. Consequently, a technique that secures a 0.9 score on one domain might yield different results on another if the traffic profile differs. However, using a real Chrome binary with a clean launch profile remains the most robust baseline.

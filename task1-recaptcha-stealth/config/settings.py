@@ -17,9 +17,9 @@ DEFAULT_DEBUG_PORT = 9222
 CONCURRENCY_LIMIT = 5  # Max parallel browser contexts
 
 # --- Timeout Settings (ms) ---
-NAV_TIMEOUT = 60000        # Page load timeout
-WARMUP_TIMEOUT = 60000     # Google warm-up timeout
-EXTRACTION_TIMEOUT = 20000 # Wait for results JSON
+NAV_TIMEOUT = 60000  # Page load timeout
+WARMUP_TIMEOUT = 60000  # Google warm-up timeout
+EXTRACTION_TIMEOUT = 20000  # Wait for results JSON
 
 # --- Stealth Config ---
 USER_AGENT_FALLBACK = (

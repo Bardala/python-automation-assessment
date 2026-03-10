@@ -1,20 +1,23 @@
 """Async Browser Lifecycle Manager (Singleton Pattern)."""
 
-import asyncio
 import os
 import subprocess
 from playwright.async_api import async_playwright, Browser, Playwright
 
 from config.settings import DEFAULT_DEBUG_PORT, PROFILE_DIR
-from src.helpers.stealth import (
-    _find_chrome_binary, _kill_existing_chrome, _wait_for_port, _load_fingerprint
+from src.stealth import (
+    _find_chrome_binary,
+    _kill_existing_chrome,
+    _wait_for_port,
+    _load_fingerprint,
 )
+
 
 class AsyncBrowserManager:
     """Manages the lifecycle of a persistent Chrome process + Async Playwright."""
-    
+
     _instance = None
-    
+
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super(AsyncBrowserManager, cls).__new__(cls)
@@ -24,7 +27,7 @@ class AsyncBrowserManager:
     def __init__(self):
         if self.initialized:
             return
-            
+
         self.browser: Browser | None = None
         self.playwright: Playwright | None = None
         self.chrome_proc: subprocess.Popen | None = None
@@ -43,16 +46,16 @@ class AsyncBrowserManager:
             password = parsed.password
             host = parsed.hostname
             port = parsed.port
-            
+
             if not username or not password:
                 return None
-                
+
             ext_dir = os.path.join(PROFILE_DIR, "proxy_auth_ext")
             if os.path.exists(ext_dir):
                 shutil.rmtree(ext_dir)
-            
+
             os.makedirs(ext_dir, exist_ok=True)
-            
+
             manifest_json = """
             {
                 "version": "1.0.0",
@@ -73,7 +76,7 @@ class AsyncBrowserManager:
                 "minimum_chrome_version":"22.0.0"
             }
             """
-            
+
             background_js = f"""
             var config = {{
                 mode: "fixed_servers",
@@ -109,7 +112,7 @@ class AsyncBrowserManager:
                 f.write(manifest_json)
             with open(os.path.join(ext_dir, "background.js"), "w") as f:
                 f.write(background_js)
-                
+
             return ext_dir
         except Exception as e:
             print(f"Error creating proxy extension: {e}")
@@ -122,11 +125,11 @@ class AsyncBrowserManager:
 
         # 1. Kill old processes
         _kill_existing_chrome(self.debug_port)
-        
+
         # 2. Prepare Launch Args
         binary = _find_chrome_binary()
         os.makedirs(PROFILE_DIR, exist_ok=True)
-        
+
         args = [
             binary,
             f"--remote-debugging-port={self.debug_port}",
@@ -145,15 +148,13 @@ class AsyncBrowserManager:
             else:
                 # Simple fallback
                 args.append(f"--proxy-server={proxy_url}")
-                
+
         if headless:
             args.insert(1, "--headless=new")
 
         # 3. Launch Process
         self.chrome_proc = subprocess.Popen(
-            args,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
+            args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
         )
 
         # 4. Wait for Port
@@ -166,7 +167,7 @@ class AsyncBrowserManager:
         self.browser = await self.playwright.chromium.connect_over_cdp(
             f"http://127.0.0.1:{self.debug_port}"
         )
-        
+
         return self.browser
 
     async def stop(self):
@@ -179,5 +180,5 @@ class AsyncBrowserManager:
             self.chrome_proc.terminate()
             try:
                 self.chrome_proc.wait(timeout=2)
-            except:
+            except Exception:
                 self.chrome_proc.kill()

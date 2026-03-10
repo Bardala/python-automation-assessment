@@ -4,6 +4,7 @@ Main Entry Point for reCAPTCHA v3 Stealth Automation.
 Execute a single test run using the centralized logic in src/core.py.
 """
 
+from config.settings import OUTPUT_DIR
 import argparse
 import json
 import os
@@ -15,9 +16,6 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from src.core import solve_recaptcha
 from src.stealth import create_stealth_persistent
 
-# Configuration
-OUTPUT_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "outputs")
-os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 def run(headless: bool = False, proxy: str | None = None):
     """
@@ -27,8 +25,7 @@ def run(headless: bool = False, proxy: str | None = None):
 
     # 1. Initialize Browser
     browser, page, pw, chrome_proc = create_stealth_persistent(
-        headless=headless, 
-        proxy=proxy
+        headless=headless, proxy=proxy
     )
 
     try:
@@ -36,20 +33,13 @@ def run(headless: bool = False, proxy: str | None = None):
         result = solve_recaptcha(page)
 
         # 3. Output Results
-        print("\n" + "="*40)
-        print(f"✅ Final Score: {result['score']}")
-        print(f"✅ Success: {result['success']}")
-        if result['token']:
-            print(f"✅ Token: {result['token'][:40]}...")
-        else:
-            print("⚠️  No token captured")
-        print("="*40)
+        printOutputResult(result)
 
         # 4. Save to File
         timestamp = result.get("timestamp", "").replace(":", "-").replace(".", "-")
         filename = f"result_single_{timestamp}.json"
         output_path = os.path.join(OUTPUT_DIR, filename)
-        
+
         with open(output_path, "w") as f:
             json.dump(result, f, indent=2)
         print(f"📄 Result saved to: {output_path}")
@@ -62,6 +52,19 @@ def run(headless: bool = False, proxy: str | None = None):
         pw.stop()
         print("🏁 Browser Session Closed")
 
+
+def printOutputResult(result: dict):
+    """Print the result in a formatted way."""
+    print("\n" + "=" * 40)
+    print(f"✅ Final Score: {result['score']}")
+    print(f"✅ Success: {result['success']}")
+    if result["token"]:
+        print(f"✅ Token: {result['token'][:40]}...")
+    else:
+        print("⚠️  No token captured")
+    print("=" * 40)
+
+
 def main():
     parser = argparse.ArgumentParser(description="reCAPTCHA v3 Single Run")
     parser.add_argument("--headless", action="store_true", help="Run without UI")
@@ -69,6 +72,7 @@ def main():
     args = parser.parse_args()
 
     run(headless=args.headless, proxy=args.proxy)
+
 
 if __name__ == "__main__":
     main()

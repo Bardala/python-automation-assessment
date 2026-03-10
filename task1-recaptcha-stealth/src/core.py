@@ -4,7 +4,7 @@ This module acts as the Single Source of Truth for test execution logic.
 It decouples the 'what to do' (test steps) from the 'how to run it' (single run vs scaled run).
 """
 
-import time
+from config.settings import GOOGLE_URL, TARGET_URL
 import random
 from datetime import datetime
 from playwright.sync_api import Page
@@ -13,21 +13,18 @@ from .human import random_mouse_movements, random_scroll, human_click
 from .interceptor import TokenInterceptor
 from .extractor import parse_recaptcha_response
 
-# Configuration Constants
-TARGET_URL = "https://cd.captchaaiplus.com/recaptcha-v3-2.php"
-GOOGLE_URL = "https://www.google.com"
 
 def solve_recaptcha(page: Page) -> dict:
     """
     Executes the standard reCAPTCHA v3 solving flow on the given page.
-    
+
     Flow:
     1. Setup Token Interceptor
     2. Google Warm-up (Trust Building)
     3. Navigate to Target
     4. Simulate Human Behavior
     5. Click & Extract Result
-    
+
     Returns:
         dict: The result object containing score, success status, token, etc.
     """
@@ -36,7 +33,7 @@ def solve_recaptcha(page: Page) -> dict:
         "score": 0.0,
         "token": None,
         "error": None,
-        "timestamp": datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
     }
 
     try:
@@ -48,7 +45,7 @@ def solve_recaptcha(page: Page) -> dict:
         _perform_warmup(page)
 
         # 3. Navigate to Target
-        print(f"  -> Navigating to target...")
+        print("  -> Navigating to target...")
         page.goto(TARGET_URL, wait_until="load", timeout=60000)
 
         # 4. Human Simulation
@@ -56,18 +53,20 @@ def solve_recaptcha(page: Page) -> dict:
 
         # 5. Interaction & Extraction
         human_click(page, "#btn")
-        
+
         _wait_for_result(page)
-        
+
         raw_json = page.inner_text("#out")
         extracted_data = parse_recaptcha_response(raw_json)
 
-        result.update({
-            "success": extracted_data.get("success", False),
-            "score": extracted_data.get("score", 0.0),
-            "token": interceptor.token
-        })
-        
+        result.update(
+            {
+                "success": extracted_data.get("success", False),
+                "score": extracted_data.get("score", 0.0),
+                "token": interceptor.token[:20],
+            }
+        )
+
         print(f"  ✅ Score: {result['score']} | Success: {result['success']}")
 
     except Exception as e:
@@ -106,5 +105,5 @@ def _wait_for_result(page: Page):
             try { JSON.parse(el.textContent); return true; }
             catch { return false; }
         }""",
-        timeout=20000
+        timeout=20000,
     )
